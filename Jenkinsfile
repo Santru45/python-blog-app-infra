@@ -15,7 +15,7 @@ pipeline {
 
                 // Clone the Git repository
                 git branch: 'master',
-                    url: 'https://github.com/Santru45/terraform-app-infra.git'
+                    url: 'https://github.com/Santru45/python-blog-app-infra.git'
 
                 sh "ls -lart"
             }
