@@ -51,6 +51,6 @@ export FLASK_ENV=production
 
 # Start the app in background
 echo "Starting FlaskBlog app..."
-setsid python3 -u app/app.py &> "$LOGFILE" &
+setsid uv run app.py --host 0.0.0.0 --port 5000 &> "$LOGFILE" &
 
 echo "App started. Tail logs with: tail -f $LOGFILE"
