@@ -1,56 +1,21 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#! /bin/bash
+cd /home/ubuntu
 
-# ---- Config ----
-WORKDIR="/home/ubuntu"
-REPO="https://github.com/DogukanUrker/flaskBlog.git"
-REPO_DIR="flaskBlog"
-PYTHON_BIN="python3"
-VENV_DIR="$WORKDIR/$REPO_DIR/venv"
-LOGFILE="$WORKDIR/flaskblog_app.log"
-# ------------------
-
-cd "$WORKDIR"
-
-# Update & install basic deps
+# Update & install basics
 yes | sudo apt update
-yes | sudo apt install -y git $PYTHON_BIN $PYTHON_BIN-venv
+yes | sudo apt install -y python3 python3-pip python3-venv git
 
-# Clone or update repo
-if [ -d "$REPO_DIR" ]; then
-  echo "FlaskBlog repo exists; pulling latest..."
-  cd "$REPO_DIR"
-  git fetch --all
-  git reset --hard origin/HEAD
-  git pull --ff-only || true
-else
-  git clone "$REPO" "$REPO_DIR"
-  cd "$REPO_DIR"
-fi
+# Clone repo (fresh every time)
+git clone https://github.com/DogukanUrker/flaskBlog.git
+cd flaskBlog/app
 
-# Set up virtualenv if missing
-if [ ! -d "$VENV_DIR" ]; then
-  $PYTHON_BIN -m venv "$VENV_DIR"
-fi
+# Create venv + install deps
+python3 -m venv venv
+# shellcheck disable=SC1091
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r ../requirements.txt || pip install uv Flask
 
-# Activate virtualenv
-source "$VENV_DIR/bin/activate"
-
-# Install python requirements
-if [ -f requirements.txt ]; then
-  pip install --upgrade pip
-  pip install -r requirements.txt
-else
-  echo "requirements.txt not found — installing Flask"
-  pip install flask
-fi
-
-# Export env vars if needed
-export FLASK_APP=app/app.py    # adjust path if app entry is inside app folder
-export FLASK_ENV=production
-
-# Start the app in background
-echo "Starting FlaskBlog app..."
-setsid uv run app.py --host 0.0.0.0 --port 5000 &> "$LOGFILE" &
-
-echo "App started. Tail logs with: tail -f $LOGFILE"
+echo 'Starting flaskBlog on port 5000...'
+# Run detached (so Jenkins/Terraform doesn’t block)
+setsid uv run app.py --host 0.0.0.0 --port 5000 &> /home/ubuntu/flaskblog.log &
